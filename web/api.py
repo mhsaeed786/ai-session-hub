@@ -229,3 +229,184 @@ def register_routes(app: Flask):
         except Exception as e:
             conn.close()
             return jsonify({"results": [], "total": 0, "error": str(e)})
+
+    # ======================== PRICING ========================
+
+    @app.route("/api/pricing")
+    def api_pricing():
+        """Return pricing for all known models."""
+        from core.pricing import get_pricing, DEFAULT_PRICING
+        pricing = []
+        for model, rates in DEFAULT_PRICING.items():
+            pricing.append({"model": model, **rates})
+        return jsonify({"pricing": pricing})
+
+    @app.route("/api/pricing/scrape", methods=["POST"])
+    def api_pricing_scrape():
+        """Scrape current pricing from public sources via Playwright."""
+        from tools.pricing_scraper import scrape_all
+        results = scrape_all(headless=True)
+        return jsonify({"status": "ok", "results": results})
+
+    @app.route("/api/pricing/update", methods=["POST"])
+    def api_pricing_update():
+        """Update pricing with user-provided values."""
+        from core.pricing import DEFAULT_PRICING
+        from core.sync import get_conn
+        data = request.get_json(force=True, silent=True) or {}
+        model = data.get("model")
+        rates = data.get("rates")
+        if not model or not rates:
+            return jsonify({"error": "model and rates required"}), 400
+        DEFAULT_PRICING[model.lower()] = rates
+        conn = get_conn()
+        conn.execute(
+            "INSERT OR REPLACE INTO pricing_cache (model, provider, input_per_million, "
+            "output_per_million, cache_read_per_million, cache_write_per_million, "
+            "source_url, scraped_at, raw_text) VALUES (?,?,?,?,?,?,?,?,?)",
+            (model.lower(), rates.get("source", "manual"), rates.get("input"),
+             rates.get("output"), rates.get("cache_read"), rates.get("cache_write"),
+             "manual", __import__("datetime").datetime.now(
+                 __import__("datetime").timezone.utc).isoformat(), str(rates)))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "ok", "model": model, "rates": rates})
+
+    # ======================== COSTS ========================
+
+    @app.route("/api/costs")
+    def api_costs():
+        """Return cost summary across all sessions."""
+        from core.pricing import get_cost_summary
+        return jsonify(get_cost_summary())
+
+    @app.route("/api/costs/compute", methods=["POST"])
+    def api_costs_compute():
+        """Re-compute costs for all sessions."""
+        from core.pricing import enrich_all_costs
+        result = enrich_all_costs()
+        return jsonify({"status": "ok", **result})
+
+    @app.route("/api/sessions/<path:session_id>/cost")
+    def api_session_cost(session_id):
+        """Return cost breakdown for a single session."""
+        from core.pricing import calculate_session_cost
+        conn = get_db()
+        row = conn.execute(
+            "SELECT model, input_tokens, output_tokens, cache_read_tokens, "
+            "cache_write_tokens, reasoning_tokens FROM sessions WHERE id=?",
+            (session_id,)).fetchone()
+        conn.close()
+        if not row:
+            return jsonify({"error": "Session not found"}), 404
+        cost = calculate_session_cost(
+            model=row["model"] or "",
+            input_tokens=row["input_tokens"] or 0,
+            output_tokens=row["output_tokens"] or 0,
+            cache_read=row["cache_read_tokens"] or 0,
+            cache_write=row["cache_write_tokens"] or 0,
+            reasoning=row["reasoning_tokens"] or 0,
+        )
+        return jsonify(cost)
+
+    # ======================== DEEP SCAN ========================
+
+    @app.route("/api/deep-scan", methods=["POST"])
+    def api_deep_scan():
+        """Scan the whole PC for session folders."""
+        from core.deepscan import scan_and_import_deep
+        data = request.get_json(force=True, silent=True) or {}
+        paths = data.get("paths", None)
+        result = scan_and_import_deep(paths)
+        return jsonify({"status": "ok", **result})
+
+    @app.route("/api/deep-scan/preview", methods=["GET"])
+    def api_deep_scan_preview():
+        """Preview folders without importing."""
+        from core.deepscan import deep_scan
+        result = deep_scan()
+        return jsonify(result)
+
+    # ======================== DEDUP ========================
+
+    @app.route("/api/duplicates")
+    def api_duplicates():
+        """Find duplicate sessions."""
+        from core.dedup import find_duplicates
+        return jsonify(find_duplicates())
+
+    @app.route("/api/duplicates/merge", methods=["POST"])
+    def api_duplicates_merge():
+        """Merge duplicate sessions."""
+        from core.dedup import merge_duplicates
+        data = request.get_json(force=True, silent=True) or {}
+        keep = data.get("keep")
+        remove_ids = data.get("remove_ids", [])
+        if not keep or not remove_ids:
+            return jsonify({"error": "keep and remove_ids required"}), 400
+        result = merge_duplicates(keep, remove_ids)
+        return jsonify({"status": "ok", **result})
+
+    # ======================== SAFE DELETE ========================
+
+    @app.route("/api/sessions/<path:session_id>", methods=["DELETE"])
+    def api_session_delete(session_id):
+        """Delete a single session."""
+        conn = get_db()
+        conn.execute("DELETE FROM messages WHERE session_fk=?", (session_id,))
+        conn.execute("DELETE FROM sessions WHERE id=?", (session_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "ok", "deleted": session_id})
+
+    @app.route("/api/sessions/batch-delete", methods=["POST"])
+    def api_batch_delete():
+        """Delete multiple sessions."""
+        data = request.get_json(force=True, silent=True) or {}
+        ids = data.get("ids", [])
+        if not ids:
+            return jsonify({"error": "ids required"}), 400
+        conn = get_db()
+        for sid in ids:
+            conn.execute("DELETE FROM messages WHERE session_fk=?", (sid,))
+            conn.execute("DELETE FROM sessions WHERE id=?", (sid,))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "ok", "deleted": len(ids)})
+
+    @app.route("/api/sessions/delete-all", methods=["POST"])
+    def api_delete_all():
+        """Delete ALL sessions (nuclear option)."""
+        data = request.get_json(force=True, silent=True) or {}
+        confirm = data.get("confirm")
+        if confirm != "DELETE_ALL":
+            return jsonify({"error": "Set confirm: 'DELETE_ALL' to proceed"}), 400
+        conn = get_db()
+        conn.execute("DELETE FROM messages")
+        conn.execute("DELETE FROM sessions")
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "ok", "deleted": "all"})
+
+    # ======================== EXHAUSTIVE AGENT SCAN ========================
+
+    @app.route("/api/agents/discover", methods=["GET"])
+    def api_agents_discover():
+        """Discover all AI agents/tools installed on this PC."""
+        import os
+        from config import HOME
+        agents = []
+        known = {
+            ".claude": "Claude Code", ".codex": "Codex CLI", ".openclaw": "OpenClaw",
+            ".gemini": "Gemini", ".hermes": "Hermes", ".trae": "Trae",
+            ".cursor": "Cursor", ".cline": "Cline", ".chatgpt": "ChatGPT",
+            ".codeium": "Codeium/Windsurf", ".copilot": "GitHub Copilot",
+            ".zai": "Z.AI", ".cherrystudio": "Cherry Studio", ".tabnine": "Tabnine",
+            ".ollama": "Ollama", ".agents": "Agents", ".oneagent": "OneAgent",
+            ".zcode": "ZCode", ".antigravity": "Antigravity",
+        }
+        for dotdir, name in known.items():
+            path = os.path.join(HOME, dotdir)
+            if os.path.isdir(path):
+                agents.append({"name": name, "path": path, "found": True})
+        return jsonify({"agents": agents, "total": len(agents)})

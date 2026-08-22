@@ -63,6 +63,10 @@ class HermesAdapter(BaseAdapter):
                                  "message_count"]
                 if "cwd" in cols:
                     select_parts.insert(2, "cwd")
+                for token_col in ("input_tokens", "output_tokens", "cache_read_tokens",
+                                  "cache_write_tokens", "reasoning_tokens", "api_call_count"):
+                    if token_col in cols:
+                        select_parts.append(token_col)
                 if "session_key" in cols:
                     select_parts.append("session_key")
                 if "chat_id" in cols:
@@ -85,6 +89,12 @@ class HermesAdapter(BaseAdapter):
                         started_at=r.get("started_at"),
                         ended_at=r.get("ended_at"),
                         message_count=r.get("message_count") or 0,
+                        input_tokens=r.get("input_tokens") or 0,
+                        output_tokens=r.get("output_tokens") or 0,
+                        cache_read_tokens=r.get("cache_read_tokens") or 0,
+                        cache_write_tokens=r.get("cache_write_tokens") or 0,
+                        reasoning_tokens=r.get("reasoning_tokens") or 0,
+                        api_call_count=r.get("api_call_count") or 0,
                         file_path=db_path,
                         file_size_bytes=os.path.getsize(db_path),
                         file_mtime=os.path.getmtime(db_path),

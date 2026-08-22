@@ -122,21 +122,31 @@ class SyncEngine:
             self.conn.execute("""
                 UPDATE sessions SET title=?, project_path=?, model=?, status=?,
                     started_at=?, ended_at=?, message_count=?, file_path=?,
-                    file_size_bytes=?, file_mtime=?, raw_metadata=?, last_synced_at=?
+                    file_size_bytes=?, file_mtime=?, raw_metadata=?,
+                    input_tokens=?, output_tokens=?, cache_read_tokens=?,
+                    cache_write_tokens=?, reasoning_tokens=?, api_call_count=?,
+                    last_synced_at=?
                 WHERE id=?
             """, (session.title, session.project_path, session.model, session.status,
                   session.started_at, session.ended_at, msg_count, session.file_path,
-                  session.file_size_bytes, session.file_mtime, raw_meta, now, cid))
+                  session.file_size_bytes, session.file_mtime, raw_meta,
+                  session.input_tokens, session.output_tokens, session.cache_read_tokens,
+                  session.cache_write_tokens, session.reasoning_tokens, session.api_call_count,
+                  now, cid))
         else:
             self.conn.execute("""
                 INSERT INTO sessions (id, tool, session_id, title, project_path, model,
                     status, started_at, ended_at, message_count, file_path,
-                    file_size_bytes, file_mtime, raw_metadata, first_synced_at, last_synced_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    file_size_bytes, file_mtime, raw_metadata,
+                    input_tokens, output_tokens, cache_read_tokens, cache_write_tokens,
+                    reasoning_tokens, api_call_count, first_synced_at, last_synced_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """, (cid, tool_name, session.session_id, session.title, session.project_path,
                   session.model, session.status, session.started_at, session.ended_at,
                   msg_count, session.file_path, session.file_size_bytes, session.file_mtime,
-                  raw_meta, now, now))
+                  raw_meta, session.input_tokens, session.output_tokens,
+                  session.cache_read_tokens, session.cache_write_tokens,
+                  session.reasoning_tokens, session.api_call_count, now, now))
 
     def _insert_messages(self, tool_name, session, messages):
         cid = self._composite(tool_name, session)

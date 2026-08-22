@@ -62,6 +62,58 @@ def run_categorize():
     print(f"[categorize] Updated {summary['updated']} sessions (category + title).")
 
 
+def run_costs():
+    from core.pricing import enrich_all_costs, get_cost_summary
+    enrich_all_costs()
+    s = get_cost_summary()
+    print("\n=== Cost Summary ===")
+    print(f"  Total sessions:    {s['total_sessions']}")
+    print(f"  Sessions priced:   {s['priced_sessions']}")
+    print(f"  Total cost:        ${s['total_cost_usd']}")
+    print(f"  Total API calls:   {s['total_api_calls']}")
+    print("\n  By tool:")
+    for r in s['by_tool']:
+        print(f"    {r['tool']}: ${r['cost']} ({r['api_calls']} calls)")
+    print("\n  By model:")
+    for r in s['by_model']:
+        print(f"    {r['model']}: ${r['cost']} ({r['api_calls']} calls, {r['sessions']} sessions)")
+    print("====================\n")
+
+
+def run_deep_scan():
+    from core.deepscan import scan_and_import_deep
+    r = scan_and_import_deep()
+    print(f"\nDeep scan found {r['folders_found']} folders, imported {r['sessions_imported']} sessions.")
+
+
+def run_dedup():
+    from core.dedup import find_duplicates
+    d = find_duplicates()
+    print(f"\nFound {d['total_dup_groups']} duplicate groups.")
+
+
+def run_agents():
+    import os
+    from config import HOME
+    agents = []
+    known = {
+        ".claude": "Claude Code", ".codex": "Codex CLI", ".openclaw": "OpenClaw",
+        ".gemini": "Gemini", ".hermes": "Hermes", ".trae": "Trae",
+        ".cursor": "Cursor", ".cline": "Cline", ".chatgpt": "ChatGPT",
+        ".codeium": "Codeium/Windsurf", ".copilot": "GitHub Copilot",
+        ".zai": "Z.AI", ".cherrystudio": "Cherry Studio", ".tabnine": "Tabnine",
+        ".ollama": "Ollama", ".agents": "Agents", ".oneagent": "OneAgent",
+        ".zcode": "ZCode", ".antigravity": "Antigravity",
+    }
+    for dotdir, name in known.items():
+        path = os.path.join(HOME, dotdir)
+        if os.path.isdir(path):
+            agents.append({"name": name, "path": path})
+    print(f"\nFound {len(agents)} AI agents installed:")
+    for a in agents:
+        print(f"  {a['name']}: {a['path']}")
+
+
 def run_master_prompts(out_path):
     from core.master_prompt import build_master_prompt
     from core.sync import get_conn
@@ -107,10 +159,24 @@ def main():
                         help="Target tool for --export")
     parser.add_argument("--session", type=str, default=None, metavar="SESSION_ID",
                         help="Session id for --export")
+    parser.add_argument("--costs", action="store_true",
+                        help="Compute and display costs")
+    parser.add_argument("--deep-scan", action="store_true",
+                        help="Deep scan PC for session folders")
+    parser.add_argument("--dedup", action="store_true",
+                        help="Find duplicate sessions")
+    parser.add_argument("--agents", action="store_true",
+                        help="Discover installed AI agents")
+    parser.add_argument("--delete", type=str, default=None, metavar="SESSION_ID",
+                        help="Delete a session")
+    parser.add_argument("--delete-all", action="store_true",
+                        help="Delete ALL sessions")
     args = parser.parse_args()
 
     any_action = (args.sync or args.sync_all or args.serve or args.categorize
-                  or args.master_prompts or args.master_prompt or args.export)
+                  or args.master_prompts or args.master_prompt or args.export
+                  or args.costs or args.deep_scan or args.dedup or args.agents
+                  or args.delete or args.delete_all)
     if not any_action:
         parser.print_help()
         sys.exit(1)
@@ -122,6 +188,18 @@ def main():
 
     if args.categorize:
         run_categorize()
+
+    if args.costs:
+        run_costs()
+
+    if args.deep_scan:
+        run_deep_scan()
+
+    if args.dedup:
+        run_dedup()
+
+    if args.agents:
+        run_agents()
 
     if args.master_prompts:
         run_master_prompts(args.out)
@@ -137,6 +215,24 @@ def main():
         from core.export import export_session
         result = export_session(args.session, args.tool)
         print(result)
+
+    if args.delete:
+        from core.sync import get_conn
+        conn = get_conn()
+        conn.execute("DELETE FROM messages WHERE session_fk=?", (args.delete,))
+        conn.execute("DELETE FROM sessions WHERE id=?", (args.delete,))
+        conn.commit()
+        conn.close()
+        print(f"Deleted session: {args.delete}")
+
+    if args.delete_all:
+        from core.sync import get_conn
+        conn = get_conn()
+        conn.execute("DELETE FROM messages")
+        conn.execute("DELETE FROM sessions")
+        conn.commit()
+        conn.close()
+        print("Deleted ALL sessions.")
 
     if args.serve:
         run_server()

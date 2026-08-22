@@ -25,6 +25,12 @@ class ParsedSession:
     started_at: Optional[str] = None
     ended_at: Optional[str] = None
     message_count: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_read_tokens: int = 0
+    cache_write_tokens: int = 0
+    reasoning_tokens: int = 0
+    api_call_count: int = 0
     file_path: str = ""
     file_size_bytes: int = 0
     file_mtime: float = 0.0
