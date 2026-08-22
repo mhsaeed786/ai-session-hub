@@ -109,7 +109,15 @@ def categorize_text(text: str) -> tuple:
     best_cat, best_kws = "general", []
     best_score = 0.0
     for cat, kws in CATEGORY_RULES_LOWER:
-        hits = [k for k in kws if k in t]
+        hits = []
+        for k in kws:
+            # Short keywords ('ui', 'r') must match whole words only —
+            # a bare substring check false-positives inside 'quick hello'.
+            if len(k) <= 3:
+                if re.search(r"(?<![a-z0-9])" + re.escape(k) + r"(?![a-z0-9])", t):
+                    hits.append(k)
+            elif k in t:
+                hits.append(k)
         if hits:
             # Reward multiple hits, but even 1 hit gives a usable category
             score = min(1.0, 0.4 + len(hits) * 0.2)

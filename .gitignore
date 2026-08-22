@@ -16,3 +16,6 @@ auth.json
 
 # Exports
 hub_exports/
+
+# Session-derived content (may contain work data) — local only
+db/projects/
