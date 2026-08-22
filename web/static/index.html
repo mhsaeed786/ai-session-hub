@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Session Hub</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<nav class="topbar">
+  <div class="topbar-brand" onclick="navigate('dashboard')">
+    <span class="logo">🧲</span> AI Session Hub
+  </div>
+  <div class="topbar-search">
+    <input type="text" id="global-search" placeholder="Search every message across every tool…"
+           onkeydown="if(event.key==='Enter')doSearch(this.value)">
+  </div>
+  <div class="topbar-actions">
+    <button onclick="navigate('categorize')" class="btn btn-sm btn-ghost" title="Re-categorize & rename">🏷 Categorize</button>
+    <button onclick="triggerSync()" id="sync-btn" class="btn btn-sm">⟳ Sync</button>
+  </div>
+</nav>
+
+<main id="app">
+
+  <!-- Dashboard -->
+  <div id="view-dashboard" class="view">
+    <div class="stats-grid" id="stats-grid"></div>
+    <h2>Recent sessions</h2>
+    <div id="recent-sessions" class="session-list"></div>
+  </div>
+
+  <!-- Browse -->
+  <div id="view-browse" class="view hidden">
+    <div class="filters">
+      <select id="filter-tool" onchange="loadSessions(1)"><option value="">All tools</option></select>
+      <select id="filter-category" onchange="loadSessions(1)"><option value="">All categories</option></select>
+      <input type="date" id="filter-from" onchange="loadSessions(1)">
+      <input type="date" id="filter-to" onchange="loadSessions(1)">
+      <input type="text" id="filter-project" placeholder="Project…" onkeydown="if(event.key==='Enter')loadSessions(1)">
+      <button class="btn btn-sm" onclick="loadSessions(1)">Filter</button>
+    </div>
+    <div id="browse-sessions" class="session-list"></div>
+    <div id="browse-pagination" class="pagination"></div>
+  </div>
+
+  <!-- Session detail -->
+  <div id="view-session" class="view hidden">
+    <div class="session-toolbar">
+      <button class="btn btn-sm" onclick="navigate('browse')">← Back</button>
+      <button class="btn btn-sm" onclick="showMasterPrompt()">🧾 Master prompt</button>
+      <button class="btn btn-sm" onclick="openExport()">📤 Export</button>
+    </div>
+    <div class="session-header" id="session-header"></div>
+    <div class="master-prompt" id="master-prompt-box" style="display:none"></div>
+    <div class="export-panel" id="export-panel" style="display:none"></div>
+    <div class="message-thread" id="message-thread"></div>
+  </div>
+
+  <!-- Search -->
+  <div id="view-search" class="view hidden">
+    <h2 id="search-title">Search</h2>
+    <div id="search-results" class="search-results"></div>
+    <div id="search-pagination" class="pagination"></div>
+  </div>
+
+  <!-- Categorize -->
+  <div id="view-categorize" class="view hidden">
+    <h2>🏷 Categorize & rename sessions</h2>
+    <p class="muted">Analyze every session's instructions and project to assign a category,
+      tags, and a meaningful title. You can still rename / re-tag any session from its detail page.</p>
+    <button class="btn" onclick="runCategorize()">Re-categorize all sessions</button>
+    <div id="categorize-result" class="result-box"></div>
+    <h3>Categories found</h3>
+    <div id="category-stats" class="chips"></div>
+  </div>
+
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

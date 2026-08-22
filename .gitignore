@@ -1,0 +1,18 @@
+# Local library + caches (never commit)
+db/*.db
+db/*.db-*
+__pycache__/
+*.pyc
+venv/
+.venv/
+node_modules/
+
+# Secrets / personal data — never commit
+*.env
+.env
+auth.json
+*.key
+*.pem
+
+# Exports
+hub_exports/
