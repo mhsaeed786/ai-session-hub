@@ -29,7 +29,7 @@ class TestCategorize(unittest.TestCase):
 
     def test_title_build(self):
         from core.categorize import build_title
-        t = build_title({"project_path": "C:\\Users\\LOQ\\curemd-portal"},
+        t = build_title({"project_path": "C:\\Users\\dev\\healthcare-portal"},
                         "please build a fhir search parameter mapping for uscdi v3")
         self.assertTrue(isinstance(t, str) and len(t) > 0)
 

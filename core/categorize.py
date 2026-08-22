@@ -18,7 +18,7 @@ from core.sync import get_conn
 # Domain keywords -> category. More keywords, ordered by specificity.
 CATEGORY_RULES = [
     ("FHIR", ["fhir", "hl7", "smart on fhir", "uscdi", "ecr", "cdc", "ehr",
-              "search parameter", "curemd", "smiledr", "encounter context",
+              "search parameter", "healthcare org", "smiledr", "encounter context",
               "group cohort", "provenance", "bundle", "resource mapping",
               "fhir developer portal", "fhir server", "smart app",
               "fhir resource", "fhir api", "patient resource", "observation",

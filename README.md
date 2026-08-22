@@ -137,8 +137,8 @@ Claude Code, and so on. This is what makes migration between tools seamless.
 For any session the hub generates a **master prompt**:
 
 ```
-[SESSION] CureMD FHIR developer portal — Goose
-[OBJECTIVE] "Build a full FHIR developer portal for CureMD ..."
+[SESSION] Project Dashboard — Claude Code
+[OBJECTIVE] "Build a React dashboard with Tailwind UI ..."
 [KEY DECISIONS] <top themes from the conversation>
 [RESUME INSTRUCTIONS] <condensed, paste-ready prompt>
 ```
