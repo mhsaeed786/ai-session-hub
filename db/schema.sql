@@ -30,6 +30,14 @@ CREATE TABLE IF NOT EXISTS sessions (
     file_mtime      REAL,
     raw_metadata    TEXT,
 
+    -- Token / cost accounting (populated by adapters, read by sync.py)
+    input_tokens        INTEGER DEFAULT 0,
+    output_tokens       INTEGER DEFAULT 0,
+    cache_read_tokens   INTEGER DEFAULT 0,
+    cache_write_tokens  INTEGER DEFAULT 0,
+    reasoning_tokens    INTEGER DEFAULT 0,
+    api_call_count      INTEGER DEFAULT 0,
+
     -- Categorization (populated by core/categorize.py, editable in UI)
     category        TEXT,
     category_confidence REAL DEFAULT 0.0,
