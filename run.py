@@ -6,6 +6,7 @@ Usage:
     python run.py --serve         # Start web server
     python run.py --sync --serve  # Sync then serve
     python run.py --categorize    # Re-categorize / re-title all sessions
+    python run.py --migrate-hermes # Ingest all sessions from all tools and migrate to Hermes state.db
     python run.py --master-prompts --out FILE   # Export master prompts
     python run.py --master-prompt SESSION_ID   # Print one master prompt
     python run.py --export --tool TARGET --session ID   # Export one session
@@ -132,6 +133,20 @@ def run_master_prompts(out_path):
         print(text)
 
 
+def run_migrate_hermes():
+    print("=== Starting Full Migration to Hermes Desktop ===")
+    print("1. Running full discovery and sync across all tools...")
+    run_sync(force_full=True)
+    print("\n2. Re-categorizing and generating clean titles...")
+    run_categorize()
+    print("\n3. Bulk exporting all foreign sessions directly to Hermes state.db...")
+    from core.export import export_all_to_target
+    res = export_all_to_target("hermes")
+    print(f"\n=== Hermes Migration Complete ===")
+    print(f"  Successfully exported to Hermes DB: {res['ok']} sessions")
+    print(f"  Errors: {res['errors']}")
+
+
 def run_server():
     from web.app import create_app
     from config import WEB_HOST, WEB_PORT
@@ -147,6 +162,8 @@ def main():
     parser.add_argument("--serve", action="store_true", help="Start web server")
     parser.add_argument("--categorize", action="store_true",
                         help="Re-categorize / re-title all sessions")
+    parser.add_argument("--migrate-hermes", action="store_true",
+                        help="Discover all AI sessions and migrate directly to Hermes state.db")
     parser.add_argument("--master-prompts", action="store_true",
                         help="Export master prompts for all sessions")
     parser.add_argument("--master-prompt", type=str, default=None,
@@ -174,7 +191,7 @@ def main():
     args = parser.parse_args()
 
     any_action = (args.sync or args.sync_all or args.serve or args.categorize
-                  or args.master_prompts or args.master_prompt or args.export
+                  or args.migrate_hermes or args.master_prompts or args.master_prompt or args.export
                   or args.costs or args.deep_scan or args.dedup or args.agents
                   or args.delete or args.delete_all)
     if not any_action:
@@ -188,6 +205,9 @@ def main():
 
     if args.categorize:
         run_categorize()
+
+    if args.migrate_hermes:
+        run_migrate_hermes()
 
     if args.costs:
         run_costs()

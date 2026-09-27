@@ -16,9 +16,6 @@ def _h(*parts):
 
 
 # --- Tool Data Paths -------------------------------------------------------
-# Each tool has an adapter class that knows how to read (import) and write
-# (export) its session data. The "extra_paths" list lets a tool look in more
-# than one place (e.g. both this PC and a previous-PC backup).
 TOOL_CONFIGS = {
     "hermes": {
         "display_name": "Hermes",
@@ -37,6 +34,8 @@ TOOL_CONFIGS = {
         "data_path": os.path.join(HOME, ".claude"),
         "extra_paths": [
             os.path.join(HOME, "Documents", "Migrated data", ".claude"),
+            os.path.join(HOME, "session-migration-backup-20260822", "quarantine"),
+            os.path.join(HOME, "session-migration-backup-20260822", "c", "Users", "LOQ", ".claude"),
         ],
         "enabled": True,
     },
@@ -44,6 +43,9 @@ TOOL_CONFIGS = {
         "display_name": "Codex CLI",
         "adapter_class": "CodexAdapter",
         "data_path": os.path.join(HOME, ".codex"),
+        "extra_paths": [
+            os.path.join(HOME, "session-migration-backup-20260822", "quarantine", "codex-sessions"),
+        ],
         "enabled": True,
     },
     "gemini_antigravity": {
@@ -68,16 +70,33 @@ TOOL_CONFIGS = {
         "display_name": "OpenClaw",
         "adapter_class": "OpenClawAdapter",
         "data_path": os.path.join(HOME, ".openclaw"),
-        "extra_paths": [os.path.join(HOME, ".openclaw-autoclaw")],
+        "extra_paths": [
+            os.path.join(HOME, ".openclaw-autoclaw"),
+            os.path.join(HOME, "session-migration-backup-20260822", "quarantine", "openclaw"),
+            os.path.join(HOME, "Goose Chats (Old)", "_wsl_cache"),
+        ],
         "enabled": True,
     },
     "goose": {
         "display_name": "Goose",
         "adapter_class": "GooseAdapter",
-        "data_path": os.path.join(HOME, "Goose Chats (Old)"),
+        "data_path": os.path.join(HOME, "AppData", "Roaming", "Block", "goose", "data", "sessions"),
         "extra_paths": [
-            os.path.join(HOME, "AppData", "Roaming", "Block", "goose", "data", "sessions"),
+            os.path.join(HOME, "Goose Chats (Old)"),
+            os.path.join(HOME, "session-migration-backup-20260822", "quarantine", "goose"),
         ],
+        "enabled": True,
+    },
+    "mimocode": {
+        "display_name": "Mimocode",
+        "adapter_class": "MimocodeAdapter",
+        "data_path": os.path.join(HOME, ".local", "share", "mimocode"),
+        "enabled": True,
+    },
+    "opencode": {
+        "display_name": "Opencode",
+        "adapter_class": "OpencodeAdapter",
+        "data_path": os.path.join(HOME, ".local", "share", "opencode"),
         "enabled": True,
     },
     "chatgpt": {
@@ -90,6 +109,9 @@ TOOL_CONFIGS = {
         "display_name": "Trae AI",
         "adapter_class": "TraeAdapter",
         "data_path": os.path.join(HOME, ".trae"),
+        "extra_paths": [
+            os.path.join(HOME, ".trae-old"),
+        ],
         "enabled": True,
     },
     "cursor": {
@@ -114,6 +136,9 @@ TOOL_CONFIGS = {
         "display_name": "Z.AI",
         "adapter_class": "ZaiAdapter",
         "data_path": os.path.join(HOME, ".zai"),
+        "extra_paths": [
+            os.path.join(HOME, "session-migration-backup-20260822", "quarantine", "zai"),
+        ],
         "enabled": True,
     },
     "cherrystudio": {

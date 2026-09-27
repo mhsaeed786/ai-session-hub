@@ -16,27 +16,46 @@ class ClaudeCodeAdapter(BaseAdapter):
             if not os.path.isdir(base):
                 continue
             projects_dir = os.path.join(base, "projects")
-            if not os.path.isdir(projects_dir):
-                continue
             session_meta = self._load_session_metadata(base)
-            for proj_dir_name in os.listdir(projects_dir):
-                proj_path = os.path.join(projects_dir, proj_dir_name)
-                if not os.path.isdir(proj_path):
-                    continue
-                project_path = proj_dir_name.replace("-", os.sep)
-                if project_path.startswith("C" + os.sep):
-                    project_path = project_path[:2] + ":" + project_path[2:]
-                for fname in os.listdir(proj_path):
-                    if not fname.endswith(".jsonl"):
+            if os.path.isdir(projects_dir):
+                for proj_dir_name in os.listdir(projects_dir):
+                    proj_path = os.path.join(projects_dir, proj_dir_name)
+                    if not os.path.isdir(proj_path):
                         continue
-                    fpath = os.path.join(proj_path, fname)
+                    project_path = proj_dir_name.replace("-", os.sep)
+                    if project_path.startswith("C" + os.sep):
+                        project_path = project_path[:2] + ":" + project_path[2:]
+                    for fname in os.listdir(proj_path):
+                        if not fname.endswith(".jsonl"):
+                            continue
+                        fpath = os.path.join(proj_path, fname)
+                        session_id = fname.replace(".jsonl", "")
+                        meta = session_meta.get(session_id, {})
+                        stat = os.stat(fpath)
+                        yield ParsedSession(
+                            session_id=f"claude:{session_id}",
+                            title=meta.get("title"),
+                            project_path=meta.get("cwd", project_path),
+                            model=meta.get("version"),
+                            status="completed",
+                            started_at=meta.get("startedAt"),
+                            ended_at=meta.get("updatedAt"),
+                            file_path=fpath,
+                            file_size_bytes=stat.st_size,
+                            file_mtime=stat.st_mtime,
+                            raw_metadata={"project_dir": proj_dir_name},
+                        )
+            # Also check direct jsonl files in base
+            for fname in os.listdir(base):
+                if fname.endswith(".jsonl") and not fname.startswith("history"):
+                    fpath = os.path.join(base, fname)
                     session_id = fname.replace(".jsonl", "")
                     meta = session_meta.get(session_id, {})
                     stat = os.stat(fpath)
                     yield ParsedSession(
                         session_id=f"claude:{session_id}",
                         title=meta.get("title"),
-                        project_path=meta.get("cwd", project_path),
+                        project_path=meta.get("cwd", base),
                         model=meta.get("version"),
                         status="completed",
                         started_at=meta.get("startedAt"),
@@ -44,7 +63,7 @@ class ClaudeCodeAdapter(BaseAdapter):
                         file_path=fpath,
                         file_size_bytes=stat.st_size,
                         file_mtime=stat.st_mtime,
-                        raw_metadata={"project_dir": proj_dir_name},
+                        raw_metadata={"project_dir": base},
                     )
 
     def parse_messages(self, session: ParsedSession) -> Generator[ParsedMessage, None, None]:

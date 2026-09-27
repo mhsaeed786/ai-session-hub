@@ -1,12 +1,13 @@
 """Exporter — writes any neutral session into another tool's native cache format.
 
-Safety: exports ALWAYS write to a NEW file and back up any existing destination
-as `.hub.bak` before writing. Source data is never touched.
+Supports exporting directly into Hermes state.db (SQLite) so sessions are immediately
+usable in Hermes Desktop.
 """
 
 import os
 import shutil
 import sqlite3
+from typing import Optional
 
 from config import DB_PATH, get_adapter, all_tool_names
 from core.sync import get_conn
@@ -43,14 +44,28 @@ def export_session(session_id: str, target_tool: str,
         ))
 
     # Resolve destination dir
-    if not destination_dir:
+    if not destination_dir and target_tool != "hermes":
         destination_dir = _default_export_dir(target_tool, adapter)
-    os.makedirs(destination_dir, exist_ok=True)
+        os.makedirs(destination_dir, exist_ok=True)
 
     try:
-        out_path = adapter.export_session(
-            session_id=s["session_id"], title=s["title"] or s["session_id"],
-            messages=msgs, destination_dir=destination_dir)
+        if target_tool == "hermes":
+            out_path = adapter.export_session(
+                session_id=s["session_id"],
+                title=s["title"] or s["session_id"],
+                messages=msgs,
+                destination_dir=destination_dir or "",
+                cwd=s["project_path"],
+                model=s["model"],
+                started_at=s["started_at"],
+            )
+        else:
+            out_path = adapter.export_session(
+                session_id=s["session_id"],
+                title=s["title"] or s["session_id"],
+                messages=msgs,
+                destination_dir=destination_dir,
+            )
         _log_export(session_id, target_tool, out_path)
         return {"status": "ok", "path": out_path}
     except Exception as e:
@@ -58,9 +73,6 @@ def export_session(session_id: str, target_tool: str,
 
 
 def _default_export_dir(target_tool, adapter) -> str:
-    """Choose a safe default export location under the tool's data dir,
-    always in a dedicated 'hub_exports' subfolder so we never pollute the
-    tool's real cache or risk overwriting live data."""
     base = adapter.data_path or os.path.expanduser("~")
     return os.path.join(base, "hub_exports")
 
@@ -78,11 +90,13 @@ def export_all_to_target(target_tool: str, destination_dir: str | None = None,
                          limit: int = 0) -> dict:
     """Bulk-export sessions to a target tool. Returns summary."""
     conn = get_conn()
-    rows = conn.execute(
-        "SELECT id FROM sessions ORDER BY started_at DESC LIMIT ?",
-        (limit,)).fetchall() if limit else conn.execute(
-        "SELECT id FROM sessions ORDER BY started_at DESC").fetchall()
+    query = "SELECT id, tool FROM sessions WHERE tool != ? ORDER BY started_at DESC" if target_tool == "hermes" else "SELECT id, tool FROM sessions ORDER BY started_at DESC"
+    args = (target_tool,) if target_tool == "hermes" else ()
+    if limit:
+        query += f" LIMIT {limit}"
+    rows = conn.execute(query, args).fetchall()
     conn.close()
+
     ok = errors = 0
     paths = []
     for row in rows:
@@ -92,4 +106,5 @@ def export_all_to_target(target_tool: str, destination_dir: str | None = None,
             paths.append(res["path"])
         else:
             errors += 1
+            print(f"  [!] Error exporting {row['id']}: {res.get('error')}")
     return {"ok": ok, "errors": errors, "paths": paths}

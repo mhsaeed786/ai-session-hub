@@ -50,6 +50,22 @@ class OpenClawAdapter(BaseAdapter):
                         file_path=fpath, file_size_bytes=stat.st_size,
                         file_mtime=stat.st_mtime, raw_metadata={"source": "autoclaw"},
                     )
+            # Direct jsonl in base
+            for fname in os.listdir(base):
+                if not fname.endswith(".jsonl"):
+                    continue
+                if ".migrated." in fname or ".deleted." in fname:
+                    continue
+                fpath = os.path.join(base, fname)
+                stat = os.stat(fpath)
+                yield ParsedSession(
+                    session_id=f"openclaw:{fname.replace('.jsonl','')}",
+                    title=f"OpenClaw Session: {fname.replace('.jsonl','')[:12]}",
+                    project_path=None, model=None, status="completed",
+                    started_at=None, ended_at=None,
+                    file_path=fpath, file_size_bytes=stat.st_size,
+                    file_mtime=stat.st_mtime, raw_metadata={"source": "direct"},
+                )
 
     def parse_messages(self, session: ParsedSession) -> Generator[ParsedMessage, None, None]:
         seq = 0

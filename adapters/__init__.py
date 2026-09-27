@@ -14,7 +14,10 @@ from adapters.trae import TraeAdapter
 from adapters.cursor import CursorAdapter
 from adapters.cline import ClineAdapter
 from adapters.misc import CopilotAdapter, ZaiAdapter, CherryStudioAdapter, OneAgentAdapter
-from adapters.generic import GenericAdapter, MasterIndexAdapter
+from adapters.generic import GenericAdapter
+from adapters.master_index import MasterIndexAdapter
+from adapters.mimocode import MimocodeAdapter
+from adapters.opencode import OpencodeAdapter
 
 ADAPTER_REGISTRY = {
     "HermesAdapter": HermesAdapter,
@@ -35,4 +38,6 @@ ADAPTER_REGISTRY = {
     "OneAgentAdapter": OneAgentAdapter,
     "GenericAdapter": GenericAdapter,
     "MasterIndexAdapter": MasterIndexAdapter,
+    "MimocodeAdapter": MimocodeAdapter,
+    "OpencodeAdapter": OpencodeAdapter,
 }
