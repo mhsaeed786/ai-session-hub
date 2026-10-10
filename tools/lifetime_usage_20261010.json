@@ -1,0 +1,143 @@
+{
+ "tier1": [
+  [
+   "Hermes \u2014 default profile (live)",
+   248899499,
+   6979141,
+   1564890132,
+   53649,
+   "per-model ledger=248,899,499in/383 rows; sessions tbl=235,036,368in/669 rows"
+  ],
+  [
+   "Hermes \u2014 profile ai-inference-free-plan-search",
+   47465453,
+   755864,
+   219730422,
+   595869,
+   "per-model ledger=47,465,453in/46 rows; sessions tbl=46,001,844in/7 rows"
+  ],
+  [
+   "Hermes \u2014 old-PC archive (WSL)",
+   2660177,
+   417472,
+   17663820,
+   0,
+   "per-model ledger=0in/0 rows; sessions tbl=2,660,177in/39 rows"
+  ],
+  [
+   "Goose \u2014 usage_ledger (live store)",
+   294320491,
+   2002740,
+   135925930,
+   0,
+   "4428 ledger rows / 11053 msgs; sessions.accumulated=328,928,063in (per-session cumulative, higher \u2014 not used)"
+  ],
+  [
+   "Codex \u2014 rollout token events",
+   18010519,
+   239341,
+   0,
+   0,
+   "6 rollouts; cached_input_tokens=2,372,864 is a SUBSET of input (not added again); equals threads.tokens_used=18,249,860 -> counted once"
+  ],
+  [
+   "Claude Code \u2014 jsonl usage",
+   1450094,
+   288964,
+   8443584,
+   0,
+   "289 api calls / 6 files"
+  ],
+  [
+   "OpenCode \u2014 session",
+   6718,
+   82,
+   0,
+   0,
+   "recorded"
+  ],
+  [
+   "ZCode",
+   0,
+   0,
+   0,
+   0,
+   "no recorded usage"
+  ],
+  [
+   "Kilo",
+   0,
+   0,
+   0,
+   0,
+   "no recorded usage"
+  ],
+  [
+   "OpenClaw \u2014 sessions.json",
+   4016,
+   1150,
+   135668,
+   0,
+   "1 sessions recorded"
+  ]
+ ],
+ "tier2": [
+  [
+   "Antigravity 10 conversation DBs (content)",
+   2442135,
+   null,
+   null,
+   null,
+   "no token columns - tiktoken over step_payload"
+  ],
+  [
+   "Codeium/Windsurf chat state (6 pb)",
+   14422,
+   null,
+   null,
+   null,
+   "binary protobuf - tiktoken over extracted ASCII runs"
+  ],
+  [
+   "MimoCode messages/parts (content)",
+   409951,
+   null,
+   null,
+   null,
+   "no token cols - tiktoken"
+  ],
+  [
+   "Goose llm_request logs (26 files)",
+   407619,
+   null,
+   null,
+   null,
+   "debug logs incl. prompts - tiktoken"
+  ],
+  [
+   "Z.AI MCP logs (52 files)",
+   60067,
+   null,
+   null,
+   null,
+   "server logs, not conversations - tiktoken"
+  ],
+  [
+   "OpenClaw transcripts/notes (19 files)",
+   164869,
+   null,
+   null,
+   null,
+   "tiktoken"
+  ]
+ ],
+ "totals": {
+  "in": 612816967,
+  "out": 10684754,
+  "cache_r": 1946789556,
+  "cache_w": 649518,
+  "est": 3499063,
+  "processed": 2574439858,
+  "billable": 627000784
+ }
+}

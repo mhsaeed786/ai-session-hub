@@ -19,3 +19,9 @@ hub_exports/
 
 # Session-derived content (may contain work data) — local only
 db/projects/
+
+# tiktoken BPE blob (pre-fetched, vendored binary - not source)
+tiktoken_cache/
+
+# tool output logs
+*.out.txt
